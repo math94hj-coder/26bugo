@@ -290,6 +290,12 @@ pre.tree { background: var(--accent-soft); border-radius: 12px; padding: 0.8rem 
 .hero-body { display: grid; grid-template-columns: 1fr auto; gap: 1.5rem; align-items: center; }
 .hero:has(.hero-join)::after { display: none; }
 .hero-join { position: relative; z-index: 1; background: var(--bg); border: 1px solid var(--line); border-radius: 18px; padding: 0.9rem; width: 220px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.35rem; }
+.short-url { font-weight: 900; font-size: 1.35rem; letter-spacing: -0.01em; line-height: 1.2; color: var(--ink); text-decoration: none; }
+.short-url span { color: var(--accent); }
+.short-url:hover { text-decoration: underline; }
+.join-full .short-url { font-size: clamp(1.8rem, min(5vw, 7vh), 3.6rem); }
+.join-full:has(.short-url) .join-full-qr img, .join-full:has(.short-url) .join-full-qr canvas { width: min(40vh, 80vw) !important; }
+.join-full:has(.short-url) { gap: 0.6rem; }
 .join-qr { background: white; padding: 0.5rem; border-radius: 12px; line-height: 0; }
 .hero-join b { font-size: 0.9rem; }
 .join-url { font-family: var(--font-display); font-weight: 700; font-size: 0.8rem; color: var(--sage); text-decoration: none; word-break: break-all; }
@@ -416,6 +422,7 @@ pre.tree { background: var(--accent-soft); border-radius: 12px; padding: 0.8rem 
         </div>
         </div>
         <aside class="hero-join" aria-label="연수 페이지 입장 QR">
+            <a class="short-url" href="http://부고.짱.com" target="_blank" rel="noopener" aria-label="짧은 주소 부고.짱.com">부고<span>.짱.com</span></a>
             <div class="join-qr" id="heroQR"></div>
             <b>📱 휴대폰으로 들어오기</b>
             <a class="join-url" id="heroUrl" href="https://math94hj-coder.github.io/26bugo/">math94hj-coder.github.io/26bugo</a><!-- 주소는 스크립트가 현재 페이지 주소로 자동 표시 -->
@@ -911,6 +918,7 @@ pre.tree { background: var(--accent-soft); border-radius: 12px; padding: 0.8rem 
     <button type="button" class="pv-close" onclick="closeJoin()" aria-label="닫기">✕</button>
     <p class="join-full-logo">LINKFORGE <small>for Teachers</small></p>
     <h2>휴대폰 카메라로 QR을 찍어 들어오세요 📱</h2>
+    <a class="short-url" href="http://부고.짱.com" target="_blank" rel="noopener" aria-label="짧은 주소 부고.짱.com">부고<span>.짱.com</span></a>
     <div class="join-full-qr" id="joinFullQR"></div>
     <p class="join-full-url" id="joinFullUrl">math94hj-coder.github.io/26bugo</p>
     <p class="muted-sm">Gemini로 수업용 웹페이지 만들기 · 2026학년도 AI중점학교 교원역량 강화 연수</p>
