@@ -68,7 +68,7 @@ code { background: var(--accent-soft); color: var(--accent-d); padding: 0.05rem 
 
 /* quick links + stats */
 .quick-label { font-size: 0.8rem; font-weight: 700; color: var(--muted); margin: 0.4rem 0 0.4rem; letter-spacing: 0.04em; }
-.links { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin-bottom: 0.9rem; }
+.links { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; margin-bottom: 0.9rem; }
 .link-btn { display: flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.75rem; border-radius: 14px; background: white; border: 1px solid var(--border); color: var(--text); text-decoration: none; font-weight: 700; box-shadow: var(--shadow); transition: all 0.2s; }
 .link-btn:hover { border-color: var(--border-glow); transform: translateY(-2px); }
 .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin-bottom: 1.2rem; }
@@ -428,6 +428,7 @@ pre.tree { background: var(--accent-soft); border-radius: 12px; padding: 0.8rem 
 
     <p class="quick-label">연수에서 자주 여는 사이트</p>
     <div class="links">
+        <a class="link-btn" href="https://p.oin2.kr/gj-gem" target="_blank" rel="noopener">🎓 Gemini Pro 업그레이드 신청</a>
         <a class="link-btn" href="https://gemini.google.com/app" target="_blank" rel="noopener">✨ Gemini (AI에게 부탁)</a>
         <a class="link-btn" href="#" onclick="go('t3');return false;">🧾 프롬프트 만들기</a>
         <a class="link-btn" href="#" onclick="go('tg');return false;">🖼️ 작품 갤러리</a>
@@ -457,6 +458,18 @@ pre.tree { background: var(--accent-soft); border-radius: 12px; padding: 0.8rem 
     <!-- 1. 오늘 할 일 -->
     <section class="panel active" id="t1">
         <div class="now"><div class="ico">👋</div><b>지금 할 일: 오늘의 흐름 한눈에 보기 <span class="time-chip">5분</span></b><p>결과물 예시를 먼저 보고, 다섯 단계만 기억하세요. 노트북에서 Gemini에 로그인해 두면 좋습니다.</p></div>
+
+        <div class="section-head"><span></span>🎓 시작 전에: Gemini Pro 업그레이드 신청</div>
+        <div class="card demo-card">
+            <div class="demo-qr" id="proQR"></div>
+            <div>
+                <span class="tag">광주아이온 계정 선생님</span>
+                <h3 style="margin:0.35rem 0 0.3rem">Gemini Pro로 업그레이드하기</h3>
+                <p class="muted-sm" style="margin:0 0 0.8rem"><b>광주아이온 계정</b>을 가진 선생님은 아래 주소에서 <b>Gemini Pro 업그레이드</b>를 신청할 수 있어요. 휴대폰 카메라로 QR을 찍거나 버튼을 눌러 신청하세요.</p>
+                <a class="btn btn-main" href="https://p.oin2.kr/gj-gem" target="_blank" rel="noopener" style="text-decoration:none;display:inline-block">🎓 업그레이드 신청하기</a>
+                <p class="muted-sm" style="margin:0.5rem 0 0">주소: <a href="https://p.oin2.kr/gj-gem" target="_blank" rel="noopener">p.oin2.kr/gj-gem</a></p>
+            </div>
+        </div>
 
         <div class="flow">
             <div class="flow-step"><span class="n">1</span><span class="e">💡</span><b>아이디어</b><small>어떤 수업에서 무엇을 할 페이지?</small></div>
@@ -1776,6 +1789,11 @@ function openJoin() { document.getElementById('joinFull').hidden = false; docume
 function closeJoin() { document.getElementById('joinFull').hidden = true; document.body.style.overflow = ''; }
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !document.getElementById('joinFull').hidden) closeJoin(); });
 
+// 1번 탭 Gemini Pro 업그레이드 신청 QR
+(function () {
+    const pro = document.getElementById('proQR');
+    if (pro && window.QRCode) new QRCode(pro, { text: 'https://p.oin2.kr/gj-gem', width: 132, height: 132, correctLevel: QRCode.CorrectLevel.M });
+})();
 // 1번 탭 완성 예시 QR (현재 주소 기준으로 예시 퀴즈 주소를 만든다)
 (function () {
     const box = document.getElementById('demoQR');
