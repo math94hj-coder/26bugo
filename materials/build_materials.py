@@ -1,11 +1,12 @@
 """조대부고 연수용 강의 슬라이드·강의 원고 PDF를 만든다.
 
-- 강의 슬라이드 = [1부] 연수 앞부분 슬라이드 PDF(1~42쪽) + [2부] LINKFORGE 실습 슬라이드 + 마무리
+- 강의 슬라이드 = [1부] 연수 앞부분 슬라이드 PDF(1~42쪽, 쪽 번호만 n/51로) + [2부] part2_slides.html(1부와 같은 디자인)
 - 강의 원고   = 표지 + 1부 원고(part1_lecture.html) + 2부 LINKFORGE 원고
 
 사용법: python build_materials.py <1부 슬라이드 PDF>
 필요: pip install pypdf qrcode, node + playwright, Pretendard 글꼴 설치
 """
+import base64
 import io
 import re
 import sys
@@ -49,46 +50,41 @@ def local_fonts(d):
     d.s = re.sub(r'<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard[^>]*>\n', "", d.s)
 
 
-# ---------------- 2부 슬라이드 ----------------
+# ---------------- 2부 슬라이드 (1부와 같은 광주아이온 디자인) ----------------
+def data_uri(path):
+    return "data:image/png;base64," + base64.b64encode(path.read_bytes()).decode()
+
+
 def build_slides_html():
-    d = Doc((HERE / "slides_src_original.html").read_text(encoding="utf-8"))
-    local_fonts(d)
-    d.rep('<div class="logo">LINKFORGE <small>for Teachers</small></div>',
-          '<div class="kicker" style="font-size:20px">2부 · 실습</div>\n        <div class="logo">LINKFORGE <small>for Teachers</small></div>')
-    d.rep("""            <div><b>연 수</b>2026학년도 AI중점학교 교원역량 강화 연수</div>
-            <div><b>일 시</b>2026. 10. 19.(월) 15:30 · 조선대학교부속중학교 온나누리실</div>
-            <div><b>강 사</b>조선대학교부속고등학교 정보 교사 김다은</div>""",
-          f"""            <div><b>연 수</b>{TRAINING}</div>
-            <div><b>일 시</b>{WHEN} · {WHERE}</div>
-            <div><b>강 사</b>{WHO}</div>""")
-    d.rep('<div class="qr-cap">📱 실습용 웹페이지<b>richee-pc.github.io/26AI_design</b></div>',
-          f'<div class="qr-cap">📱 실습용 웹페이지<b style="font-family:Pretendard,sans-serif;font-size:30px;font-weight:900;color:var(--ink)">부고<span style="color:var(--or)">.짱.com</span></b><b>math94hj-coder.github.io/26bugo</b></div>')
-    d.rep("🏆 <b>조대부중 예시 퀴즈로 대결해 보기:</b>", "🏆 <b>조대부고 예시 퀴즈로 대결해 보기:</b>")
-    d.rep('<div class="pfoot">감사합니다 · 조선대학교부속고등학교 김다은</div>', '<div class="pfoot">Gemini로 수업용 웹페이지 만들기</div>')
-    d.s = re.sub(r'<div class="pno">(\d) / 8</div>', r'<div class="pno">2부 · \1 / 8</div>', d.s)
-    closing = f"""
-<!-- 9. 감사합니다 -->
-<section class="slide cover">
-    <div class="l" style="padding-top:150px">
-        <div class="logo">LINKFORGE <small>for Teachers</small></div>
-        <h1 style="font-size:84px">감사합니다!</h1>
-        <p class="lead">오늘 만든 링크 1개가 <b class="acc">다음 주 수업</b>이 됩니다 🌱</p>
-        <div class="meta">
-            <div><b>연 수</b>{TRAINING}(11월)</div>
-            <div><b>강 사</b>{WHO}</div>
-        </div>
-    </div>
-    <div class="r">
-        <div class="qr">{{{{QR200}}}}</div>
-        <div class="qr-cap">📱 연수가 끝난 뒤에도 다시 와서 만들어요<b style="font-family:Pretendard,sans-serif;font-size:30px;font-weight:900;color:var(--ink)">부고<span style="color:var(--or)">.짱.com</span></b></div>
-    </div>
-</section>
-"""
-    d.rep("\n</body>", closing + "\n</body>")
-    d.s = d.s.replace("{{QR200}}", qr_svg(SITE, 200)).replace("{{QR96}}", qr_svg(SITE, 96))
-    for w in ["조대부중", "richee", "김다은", "10. 19"]:
-        assert w not in d.s, w
-    return d.s
+    s = (HERE / "part2_slides.html").read_text(encoding="utf-8")
+    s = (s.replace("{{STICKER}}", data_uri(HERE / "assets" / "aion_sticker.png"))
+          .replace("{{ROBOT}}", data_uri(HERE / "assets" / "robot.png"))
+          .replace("{{QR_SITE}}", qr_svg(SITE, 230)).replace("{{QR_SMALL}}", qr_svg(SITE, 110)))
+    assert "{{" not in s
+    return s
+
+
+# 1부 슬라이드마다 흰 본문 판의 오른쪽·아래 끝(px, 1440×810 기준). 쪽 번호 덮개가 판 밖으로 나가지 않게
+PANEL_EDGE = {1: (1412, 781), 2: (1418, 780), 3: (1418, 780), 4: (1418, 780), 5: (1418, 780), 6: (1414, 781),
+              12: (1412, 770), 34: (1403, 781), 35: (1403, 781), 36: (1403, 781)}
+
+
+def relabel_html(n_pages, total):
+    """1부 슬라이드의 'n/43페이지'를 'n/전체페이지'로 덮어쓸 투명 페이지들"""
+    pages = []
+    for i in range(1, n_pages + 1):
+        right, bottom = PANEL_EDGE.get(i, (1412, 774))
+        right, bottom = min(right, 1412), min(bottom, 781)
+        top = 744
+        pages.append(f'<section><div class="lb" style="left:{right - 158}px;top:{top}px;height:{bottom - top}px;'
+                     f'line-height:{bottom - top}px">{i}/{total}페이지</div></section>')
+    return f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><style>
+@page {{ size: 1440px 810px; margin: 0; }} * {{ margin: 0; padding: 0; }}
+section {{ width: 1440px; height: 810px; position: relative; page-break-after: always; }}
+section:last-child {{ page-break-after: auto; }}
+.lb {{ position: absolute; width: 158px; background: white; text-align: right; padding-right: 8px;
+      font: 400 24px 'Pretendard', sans-serif; color: #111; }}
+</style></head><body>{"".join(pages)}</body></html>"""
 
 
 # ---------------- 강의 원고 ----------------
@@ -178,13 +174,20 @@ def pdf_from_html(html, out):
 def main():
     intro = PdfReader(sys.argv[1])
     pdf_from_html(build_slides_html(), HERE / ".part2.pdf")
+    part2 = PdfReader(HERE / ".part2.pdf")
+    total = INTRO_PAGES + len(part2.pages)
+    pdf_from_html(relabel_html(INTRO_PAGES, total), HERE / ".labels.pdf")
+    labels = PdfReader(HERE / ".labels.pdf")
     pdf_from_html(build_lecture_html(), HERE / "AI_lesson_design_script.pdf")
 
     w = PdfWriter()
     W = float(intro.pages[0].mediabox.width)
     for i in range(INTRO_PAGES):
-        w.add_page(intro.pages[i])
-    for pgobj in PdfReader(HERE / ".part2.pdf").pages:
+        pg = intro.pages[i]
+        lb = labels.pages[i]
+        pg.merge_transformed_page(lb, Transformation().scale(W / float(lb.mediabox.width)))
+        w.add_page(pg)
+    for pgobj in part2.pages:
         s = W / float(pgobj.mediabox.width)
         pgobj.add_transformation(Transformation().scale(s, s))
         pgobj.mediabox.upper_right = (float(pgobj.mediabox.width) * s, float(pgobj.mediabox.height) * s)
@@ -193,6 +196,7 @@ def main():
     with open(HERE / "AI_lesson_slides.pdf", "wb") as f:
         w.write(f)
     (HERE / ".part2.pdf").unlink()
+    (HERE / ".labels.pdf").unlink()
     print("slides", len(w.pages), "pages")
 
 
