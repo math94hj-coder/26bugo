@@ -377,6 +377,14 @@ pre.tree { background: var(--accent-soft); border-radius: 12px; padding: 0.8rem 
 .fitem img { max-height: 90px; border-radius: 8px; border: 1px solid #e5e7eb; margin-top: 0.5rem; }
 .fitem .note { font-size: 0.8rem; color: var(--muted); margin-top: 0.35rem; }
 @media (max-width: 600px) { .mode-row { grid-template-columns: 1fr; } }
+.play-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; }
+.play-row .mode { flex-direction: column; gap: 0.15rem; }
+.play-row .mode .em { font-size: 1.6rem; line-height: 1.2; }
+.play-row .mode input { position: absolute; opacity: 0; pointer-events: none; }
+.play-row .mode { position: relative; }
+.pace-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-top: 0.6rem; }
+@media (max-width: 860px) { .play-row { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 600px) { .pace-row { grid-template-columns: 1fr; } }
 
 #qrBox { display: flex; justify-content: center; padding: 1rem; background: white; border-radius: 16px; border: 1px dashed var(--border-glow); min-height: 120px; align-items: center; color: var(--muted); }
 #toast { position: fixed; bottom: 1.5rem; left: 50%; width: max-content; max-width: calc(100vw - 2rem); text-align: center; transform: translate(-50%, 160%); background: #33291f; color: white; padding: 0.7rem 1.3rem; border-radius: 999px; font-weight: 700; transition: transform 0.3s; z-index: 100; }
@@ -571,6 +579,21 @@ pre.tree { background: var(--accent-soft); border-radius: 12px; padding: 0.8rem 
                 <div class="mode-row">
                     <label class="mode"><input type="radio" name="mode" value="arch" checked><span><b>🏗️ 프롬프트 아키텍트 (추천)</b><small>Gemini가 먼저 '최고의 실행용 프롬프트'를 설계해 줘요 → 그 프롬프트를 Canvas에 붙여 넣기</small></span></label>
                     <label class="mode"><input type="radio" name="mode" value="direct"><span><b>⚡ 바로 Canvas 부탁문</b><small>한 번에 Canvas에서 웹페이지 만들기 (시간이 부족할 때)</small></span></label>
+                </div>
+            </div>
+            <div class="field" style="margin-bottom:1rem"><label>👥 수업 참여 방식 <small>(수업 시간에 학생들이 어떻게 참여할까요?)</small></label>
+                <div class="play-row" role="radiogroup" aria-label="수업 참여 방식">
+                    <label class="mode"><input type="radio" name="play" value="solo" checked><span class="em">🙋</span><b>혼자 풀기</b><small>각자 기기에서 풀고 바로 정답·해설 · 틀린 문제만 다시</small></label>
+                    <label class="mode"><input type="radio" name="play" value="team"><span class="em">⚔️</span><b>팀 대전 (한 화면)</b><small>교실 TV 하나로 두 팀이 번갈아 도전 · 틀리면 뺏기 기회</small></label>
+                    <label class="mode"><input type="radio" name="play" value="live"><span class="em">📡</span><b>실시간 참여 (교사 화면)</b><small>학생은 각자 휴대폰, 교사는 참여·점수·응답을 실시간으로 (카훗처럼)</small></label>
+                    <label class="mode"><input type="radio" name="play" value="all"><span class="em">🔀</span><b>모두 넣기</b><small>시작 화면에서 세 방식 중 골라서 (예시 퀴즈처럼)</small></label>
+                </div>
+                <div id="paceBox" hidden>
+                    <div class="pace-row">
+                        <label class="mode"><input type="radio" name="pace" value="self" checked><span><b>🏃 각자 속도</b><small>학생은 각자 풀고, 교사 화면에 실시간 순위·진행도</small></span></label>
+                        <label class="mode"><input type="radio" name="pace" value="host"><span><b>🎤 교사 진행 (카훗형)</b><small>교사가 문제를 넘기면 모두 같은 문제 · 보기별 응답 막대 · 정답 공개</small></span></label>
+                    </div>
+                    <p class="muted-sm" id="liveNote" style="margin:0.5rem 0 0"></p>
                 </div>
             </div>
             <div class="grid g2">
@@ -1243,7 +1266,11 @@ document.getElementById('pvClose').addEventListener('click', closePreview);
 document.getElementById('pvMake').addEventListener('click', e => { closePreview(); chooseType(e.currentTarget.dataset.k); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !document.getElementById('pvModal').hidden) closePreview(); });
 
-sel.addEventListener('change', () => { document.getElementById('f-features').value = TYPES[sel.value].features; save(); });
+sel.addEventListener('change', () => {
+    document.getElementById('f-features').value = TYPES[sel.value].features;
+    if (sel.value === 'battle' && getPlay() === 'solo') { document.querySelector('input[name=play][value=team]').checked = true; if (typeof syncPlay === 'function') syncPlay(); }
+    save();
+});
 
 function buildIdeaPrompt() {
     const topic = document.getElementById('idea-topic').value.trim() || '[교과 · 단원]';
@@ -1266,20 +1293,35 @@ const v = id => document.getElementById(id).value.trim();
 function save() {
     try {
         const data = Object.fromEntries(F.map(id => [id, document.getElementById(id).value]));
-        data.mode = getMode();
+        data.mode = getMode(); data.play = getPlay(); data.pace = getPace();
         localStorage.setItem('lfForm', JSON.stringify(data));
     } catch (e) {}
 }
 function getMode() { const r = document.querySelector('input[name=mode]:checked'); return r ? r.value : 'arch'; }
+function getPlay() { const r = document.querySelector('input[name=play]:checked'); return r ? r.value : 'solo'; }
+function getPace() { const r = document.querySelector('input[name=pace]:checked'); return r ? r.value : 'self'; }
 try {
     const s = JSON.parse(localStorage.getItem('lfForm') || '{}');
     F.forEach(id => { if (s[id]) document.getElementById(id).value = s[id]; });
     if (s.mode) { const r = document.querySelector(`input[name=mode][value=${s.mode}]`); if (r) r.checked = true; }
+    ['play', 'pace'].forEach(k => { if (s[k]) { const r = document.querySelector(`input[name=${k}][value=${s[k]}]`); if (r) r.checked = true; } });
 } catch (e) {}
 if (!TYPES[sel.value]) sel.value = 'quiz';
 if (!v('f-features')) document.getElementById('f-features').value = TYPES[sel.value].features;
 F.forEach(id => document.getElementById(id).addEventListener('input', save));
 document.querySelectorAll('input[name=mode]').forEach(r => r.addEventListener('change', save));
+// 실시간 참여: 점수판(구글 시트 Apps Script) 주소는 config.js 의 LINKFORGE_API 를 함께 쓴다
+const LIVE_API = String(window.LINKFORGE_API || '').trim();
+function syncPlay() {
+    const live = getPlay() === 'live' || getPlay() === 'all';
+    document.getElementById('paceBox').hidden = getPlay() !== 'live';
+    document.getElementById('liveNote').innerHTML = LIVE_API
+        ? '📡 실시간 기록은 이 연수 페이지에 연결된 <b>구글 시트 점수판</b>에 닉네임·점수만 저장돼요. 주소는 부탁문에 자동으로 들어가요.'
+        : '⚠️ 아직 구글 시트 점수판이 연결되지 않았어요. 부탁문의 [점수판 주소] 부분을 내 Apps Script 웹 앱 주소로 바꿔 주세요.';
+    return live;
+}
+document.querySelectorAll('input[name=play], input[name=pace]').forEach(r => r.addEventListener('change', () => { syncPlay(); save(); }));
+syncPlay();
 
 // ---------- 파일 첨부: 브라우저 안에서 글자 추출 ----------
 const LIBS = {
@@ -1484,13 +1526,71 @@ function lessonInfo(t) {
 - 디자인·분위기: ${v('f-design') || '밝고 친근한 파스텔 톤, 카드형 레이아웃, 큰 글씨와 큰 버튼'}${content ? `
 - 반드시 사용할 학습 내용(이 내용을 정확히 그대로 활용): ${content}` : ''}`;
 }
-const RULES = `1) HTML/CSS/JavaScript를 한 파일에 모두 넣고, 로그인·서버·API 키 없이 동작하게 한다.
-2) 모든 글은 한국어, 고등학생 눈높이의 명확한 문장으로 쓴다.
-3) 모바일 반응형으로 만들고, 글씨와 버튼을 크게 한다.
-4) 상단 제목과 '오늘의 학습 목표', 활동 안내, 활동 영역, 결과·피드백 영역을 포함한다.
-5) 학습 내용은 고등학교 교육과정 수준에 맞추고, 확실하지 않은 사실은 넣지 않는다.
-6) 학생 이름 등 개인정보를 입력받거나 저장하지 않는다.
-7) 빈 입력이나 잘못된 입력에는 친절한 안내 문구를 보여준다.`;
+const RULES_BASE = [
+    '2) 모든 글은 한국어, 고등학생 눈높이의 명확한 문장으로 쓴다.',
+    '3) 모바일 반응형으로 만들고, 글씨와 버튼을 크게 한다.',
+    "4) 상단 제목과 '오늘의 학습 목표', 활동 안내, 활동 영역, 결과·피드백 영역을 포함한다.",
+    '5) 학습 내용은 고등학교 교육과정 수준에 맞추고, 확실하지 않은 사실은 넣지 않는다.',
+];
+function rules(play) {
+    const net = play === 'live' || play === 'all';
+    return [
+        net ? '1) HTML/CSS/JavaScript를 한 파일에 모두 넣고, 로그인·API 키 없이 동작하게 한다. 서버는 만들지 않고, 실시간 기록은 위 [실시간 점수판]만 사용한다.'
+            : '1) HTML/CSS/JavaScript를 한 파일에 모두 넣고, 로그인·서버·API 키 없이 동작하게 한다.',
+        ...RULES_BASE,
+        net ? '6) 학생 실명 등 개인정보는 받지 않는다. 실시간 참여는 닉네임(별명)만 받고 "실명 대신 별명을 써요" 안내를 보여준다.'
+            : '6) 학생 이름 등 개인정보를 입력받거나 저장하지 않는다.',
+        '7) 빈 입력이나 잘못된 입력에는 친절한 안내 문구를 보여준다.',
+    ].join('\n');
+}
+const RULES = rules('solo');
+
+// ---------- 수업 참여 방식 ----------
+const PLAY_SOLO = `- 학생이 각자 휴대폰·크롬북에서 혼자 푸는 구조로 만든다.
+- 문제마다 고르는 즉시 정답/오답과 해설, 진행도 바와 점수, 끝나면 결과 화면과 [틀린 문제만 다시 풀기]·[처음부터 다시].
+- 기록은 저장하지 않는다(서버 없음).`;
+const PLAY_TEAM = `- 교사 컴퓨터 한 대를 교실 TV에 띄워 두 팀이 겨루는 '한 화면' 구조로 만든다. 학생 기기는 필요 없다.
+- 시작 화면에서 팀 이름 2개 입력(기본값 '1모둠', '2모둠'), 지금 차례인 팀을 크게 표시한다.
+- 차례 팀이 맞히면 +100점, 틀리면 상대 팀에게 '뺏기 기회'(맞히면 +50점)를 준 뒤 정답과 해설을 공개한다.
+- 화면 위쪽에 두 팀 점수판을 늘 크게 보여 주고, 마지막에 승리 팀 발표 화면(무승부 처리 포함).
+- 교실 뒤에서도 보이게 글씨를 아주 크게, 교사가 클릭만으로 진행할 수 있게 [정답 공개]·[다음 문제] 버튼을 둔다.`;
+function liveSpec(pace) {
+    const api = LIVE_API || '[점수판 주소: 내 구글 Apps Script 웹 앱 URL(…/exec)]';
+    const flow = pace === 'host'
+        ? `- 진행 방식: 교사 진행(카훗처럼). 교사가 [문제 공개]를 누르면 모든 학생 화면에 같은 문제가 뜨고, 학생은 제한 시간 20초 안에 보기를 고른다(빨리 맞힐수록 높은 점수: 남은 시간에 비례해 최대 1000점).
+- 교사 화면: 큰 문제와 남은 시간, 응답한 학생 수, 보기별 선택 수 막대그래프(players 중 q가 지금 문제 번호인 학생의 choice로 집계), [정답 공개] → 정답·해설과 이번 문제 순위 5명, [다음 문제], 마지막 문제 뒤 1~3위 시상대 화면.
+- 학생 화면: 교사가 문제를 공개하기 전에는 "선생님이 문제를 곧 공개해요" 대기 화면, 2초마다 state를 읽어 교사 화면의 문제·단계를 따라간다. 정답 공개 때 내 정답 여부와 지금 점수·순위를 보여 준다.`
+        : `- 진행 방식: 각자 속도. 학생은 같은 문제를 각자 속도로 풀고(문제당 제한 시간 15초, 빨리 맞힐수록 높은 점수: 남은 시간에 비례해 최대 1000점), 한 문제 풀 때마다 기록을 저장한다.
+- 교사 화면: 참가자 수, 실시간 순위판(닉네임·점수·맞힌 수), 학생별 진행도 막대(푼 문제 수/전체)를 3초마다 새로 불러와 보여 준다. 모두 끝나면 1~3위 시상대 화면.
+- 학생 화면: 다 풀면 내 점수와 현재 순위, 상위 5명 순위를 보여 준다.`;
+    return `- 화면 맨 위에 [👩‍🏫 교사 화면 | 🙋 학생 화면] 토글을 둔다. 주소에 ?room=코드가 있으면 학생 화면으로 바로 열고 방 코드를 자동으로 채운다.
+- 교사 화면: [방 만들기]를 누르면 무작위 4자리 방 코드와 학생 입장 QR(현재 주소 + ?room=코드)을 크게 보여 준다. QR은 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>의 new QRCode()로 그린다.
+- 학생 화면: 방 코드와 닉네임만 입력해 입장한다.
+${flow}
+- [실시간 점수판] 아래 구글 Apps Script 웹 앱을 그대로 사용한다. 주소와 요청 형식을 한 글자도 바꾸지 않는다.
+  · 주소: ${api}
+  · 학생 기록 저장: fetch(주소, { method: 'POST', body: JSON.stringify({ action: 'battle', room, pid, nick, score, correct, done, q, choice }) }) — headers(Content-Type)는 넣지 않는다(넣으면 CORS 오류). pid는 기기마다 무작위 영문·숫자 10자(localStorage에 보관), done은 지금까지 푼 문제 수, q는 방금 답한 문제 번호(1부터), choice는 고른 보기 글자.
+  · 참가자·순위 읽기: fetch(주소 + '?room=' + 방코드 + '&t=' + Date.now()) → { ok, players: [{ pid, nick, score, correct, done, q, choice }], state: { q, phase } } — players는 점수 높은 순이고 pid 앞에 'p'가 붙어서 온다.${pace === 'host' ? `
+  · 교사 진행 상태 저장: fetch(주소, { method: 'POST', body: JSON.stringify({ action: 'host', room, key, q, phase }) }) — key는 방을 만든 교사 기기의 무작위 영문·숫자 16자(localStorage에 보관), q는 지금 문제 번호(1부터), phase는 'wait'(대기)·'question'(문제 공개)·'reveal'(정답 공개)·'end'(종료).` : ''}
+- 네트워크 요청은 모두 try/catch로 감싸고, 실패해도 화면이 멈추지 않게 "다시 연결 중…" 안내를 보여 주며 다음 주기에 다시 시도한다.`;
+}
+function playBlock() {
+    const play = getPlay(), pace = getPace();
+    if (play === 'team') return `\n\n# 수업 참여 방식: ⚔️ 팀 대전 (교실 TV 한 화면)\n${PLAY_TEAM}`;
+    if (play === 'live') return `\n\n# 수업 참여 방식: 📡 실시간 참여 (학생은 각자 휴대폰, 교사는 실시간 화면)\n${liveSpec(pace)}`;
+    if (play === 'all') return `\n\n# 수업 참여 방식: 🔀 시작 화면에서 고르기
+- 시작 화면에 [🙋 혼자 풀기] [⚔️ 팀 대전 (한 화면)] [📡 실시간 대결 (각자 휴대폰)] 큰 카드 3개를 두고, 각 카드에 한 줄 설명을 붙인다.
+
+## 🙋 혼자 풀기
+${PLAY_SOLO}
+
+## ⚔️ 팀 대전 (한 화면)
+${PLAY_TEAM}
+
+## 📡 실시간 대결 (각자 휴대폰)
+${liveSpec('self')}`;
+    return `\n\n# 수업 참여 방식: 🙋 혼자 풀기\n${PLAY_SOLO}`;
+}
 
 function buildPrompt() {
     const t = TYPES[sel.value] || TYPES.quiz, mode = getMode(), ref = referenceBlock();
@@ -1509,11 +1609,12 @@ ${ref.text}` : '';
 [실행용 프롬프트]는 Gemini Canvas에 붙여 넣는 즉시, 학생이 휴대폰·크롬북에서 바로 쓸 수 있는 완성된 단일 HTML 파일(HTML/CSS/JavaScript 한 파일)이 만들어지도록 작성해야 해.
 
 # 수업 정보
-${lessonInfo(t)}${imgNote}
+${lessonInfo(t)}${imgNote}${playBlock()}
 
 # 실행용 프롬프트에 반드시 담을 조건
-${RULES}
-8) 아래 [참고 자료]가 있으면 핵심 내용(용어·문제·정답·수치·예시)을 실행용 프롬프트 안에 직접 옮겨 담아, 그 프롬프트만으로 웹페이지를 완성할 수 있게 한다.${refSection}`;
+${rules(getPlay())}
+8) 위 [수업 참여 방식]의 화면 구성과 진행 규칙을 실행용 프롬프트에 빠짐없이 옮긴다.${getPlay() === 'live' || getPlay() === 'all' ? ' 특히 [실시간 점수판]의 주소와 요청 형식은 한 글자도 바꾸지 말고 그대로 옮긴다.' : ''}
+9) 아래 [참고 자료]가 있으면 핵심 내용(용어·문제·정답·수치·예시)을 실행용 프롬프트 안에 직접 옮겨 담아, 그 프롬프트만으로 웹페이지를 완성할 수 있게 한다.${refSection}`;
     } else {
         text = `# 역할
 너는 고등학교 수업용 웹페이지를 만드는 교육 전문 프론트엔드 개발자야.
@@ -1522,10 +1623,10 @@ ${RULES}
 아래 수업 정보로, 학생이 휴대폰·크롬북에서 바로 쓸 수 있는 '${t.name}' 웹페이지를 Canvas에 단일 HTML 파일로 만들어 줘.
 
 # 수업 정보
-${lessonInfo(t)}${imgNote}
+${lessonInfo(t)}${imgNote}${playBlock()}
 
 # 반드시 지킬 것
-${RULES}${ref.count ? '\n8) 아래 [참고 자료]의 용어·문제·정답·수치를 정확히 그대로 활용한다.' : ''}${refSection}`;
+${rules(getPlay())}${ref.count ? '\n8) 아래 [참고 자료]의 용어·문제·정답·수치를 정확히 그대로 활용한다.' : ''}${refSection}`;
     }
     document.getElementById('outLabel').textContent = mode === 'arch' ? '🏗️ 프롬프트 아키텍트 부탁문 · Gemini 일반 채팅에 붙여 넣기' : '⚡ 바로 Canvas 부탁문 · Canvas를 켜고 붙여 넣기';
     document.getElementById('outPrompt').textContent = text;
@@ -1533,6 +1634,7 @@ ${RULES}${ref.count ? '\n8) 아래 [참고 자료]의 용어·문제·정답·�
     document.getElementById('outNext').innerHTML = mode === 'arch'
         ? `<div class="tip">🏗️ <b>다음 순서:</b> ① Gemini <b>일반 채팅</b>에 붙여 넣기 → ② 답변의 <b>[🇰🇷 한국어 프롬프트]</b> 박스 복사 → ③ <b>새 채팅</b>에서 <b>도구 → Canvas</b>를 켜고 붙여 넣기${ref.images.length ? ' (이미지도 함께 첨부)' : ''} → 「4. 화면 만들기」 탭에서 고치기</div>`
         : `<p class="ok">✅ 복사했으면 → Gemini에서 <b>Canvas</b>를 켜고 붙여 넣기${ref.images.length ? ' (이미지도 함께 첨부)' : ''} → 「4. 화면 만들기」 탭으로!</p>`;
+    if (getPlay() === 'live' || getPlay() === 'all') document.getElementById('outNext').innerHTML += `<div class="tip">📡 <b>실시간 기능 확인:</b> Canvas 미리보기에서는 기록 저장이 막힐 수 있어요. <b>공유 링크</b>로 열어 휴대폰 2대(교사·학생)로 먼저 시험해 보세요.${LIVE_API ? '' : ' 부탁문의 <b>[점수판 주소]</b>를 내 Apps Script 웹 앱 주소로 바꾸는 것도 잊지 마세요.'}</div>`;
     document.getElementById('outWrap').style.display = 'block';
     document.getElementById('outWrap').scrollIntoView({ behavior: 'smooth', block: 'center' });
     save();
