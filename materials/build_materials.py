@@ -110,8 +110,7 @@ def build_lecture_html():
     d.rep('<div class="box c-or"><div class="t">① 이해</div><p>수업용 웹페이지가 학습지와 무엇이 다른지, 어떤 종류를 만들 수 있는지 안다.</p></div>',
           '<div class="box c-or"><div class="t">① 이해</div><p>광주아이온 Gemini Pro와 AI 활용 유의사항, 좋은 프롬프트의 구조를 안다.</p></div>')
     d.rep('<p style="font-family:Outfit,sans-serif;font-weight:700;font-size:12pt;color:#0369a1;margin:0.5mm 0">https://richee-pc.github.io/26AI_design/</p>',
-          '<p style="font-weight:900;font-size:17pt;margin:0.5mm 0">부고<span style="color:#ea580c">.짱.com</span></p>'
-          '<p style="font-family:Outfit,sans-serif;font-weight:700;font-size:10.5pt;color:#0369a1;margin:0 0 0.5mm">https://math94hj-coder.github.io/26bugo/</p>')
+          '<p style="font-weight:900;font-size:17pt;margin:0.5mm 0">부고<span style="color:#ea580c">.짱.com</span></p>')
     # 표지 QR 교체
     d.s = re.sub(r'<svg width="24mm" height="24mm"[\s\S]*?</svg>', lambda m: qr_svg(SITE, "24mm"), d.s, count=1)
 
