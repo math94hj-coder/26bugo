@@ -1082,8 +1082,8 @@ const FIX_GROUPS = [
         ['코드가 끊김', '코드가 중간에 끊겼어. 생략 없이 처음부터 끝까지 전체 코드를 다시 써 줘.'],
         ['전에 것으로', '방금 바꾼 것은 되돌리고, 그 전 버전에서 [○○]만 바꿔 줘.'],
         ['전체 점검', '모든 버튼과 기능을 하나씩 점검해서 문제가 되는 부분을 목록으로 알려 주고, 모두 고쳐 줘.'],
-        ['실시간 퀴즈 QR 접속 오류', '교사 화면의 QR 칸에 \'학생 입장 주소를 입력해 주세요\'만 보이고 입력할 곳이 없어서 QR이 안 나와. 방 코드도 영문이 섞여 있는데 점수판은 숫자 4~6자리만 받아. 이렇게 고쳐 줘. ① 방 코드는 1000~9999 사이 숫자 4자리로만 만들어 줘(영문 금지). 학생 화면의 방 코드 칸도 숫자만 입력되게(inputmode=numeric) 해 줘. ② QR 칸 안, 안내 문구 자리에 바로 \'학생 입장 주소\' 입력 칸과 [QR 만들기] 버튼을 넣어 줘. 안내 문구는 \'Canvas 오른쪽 위 공유 → 링크 복사 → 여기에 붙여 넣기\'. [QR 만들기]를 누르면 그 주소로 QR을 그리고 입력 칸은 접어 두되, QR 아래 [주소 바꾸기] 버튼으로 다시 열 수 있게 해 줘. 주소는 localStorage에 저장해서 다음에 열면 자동으로 QR이 나오게 해 줘. ③ 주소가 https:// 로 시작하지 않으면 \'공유 링크(https://…)를 붙여 넣어 주세요\'라고 알려 줘. 공유 링크에는 ?room= 을 붙이지 마. ④ QR 그리기 라이브러리가 안 불러와지면 <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=(encodeURIComponent한 주소)">로 대신 보여 줘. 나머지 기능은 그대로 둬.']
-
+        ['실시간 퀴즈 QR 접속 오류', '교사 화면의 QR 칸에 \'학생 입장 주소를 입력해 주세요\'만 보이고 입력할 곳이 없어서 QR이 안 나와. 방 코드도 영문이 섞여 있는데 점수판은 숫자 4~6자리만 받아. 이렇게 고쳐 줘. ① 방 코드는 1000~9999 사이 숫자 4자리로만 만들어 줘(영문 금지). 학생 화면의 방 코드 칸도 숫자만 입력되게(inputmode=numeric) 해 줘. ② QR 칸 안, 안내 문구 자리에 바로 \'학생 입장 주소\' 입력 칸과 [QR 만들기] 버튼을 넣어 줘. 안내 문구는 \'Canvas 오른쪽 위 공유 → 링크 복사 → 여기에 붙여 넣기\'. [QR 만들기]를 누르면 그 주소로 QR을 그리고 입력 칸은 접어 두되, QR 아래 [주소 바꾸기] 버튼으로 다시 열 수 있게 해 줘. 주소는 localStorage에 저장해서 다음에 열면 자동으로 QR이 나오게 해 줘. ③ 주소가 https:// 로 시작하지 않으면 \'공유 링크(https://…)를 붙여 넣어 주세요\'라고 알려 줘. 공유 링크에는 ?room= 을 붙이지 마. ④ QR 그리기 라이브러리가 안 불러와지면 <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=(encodeURIComponent한 주소)">로 대신 보여 줘. 나머지 기능은 그대로 둬.'],
+        ['실시간 참여 현황이 안 보여요', '학생은 입장이 되는데 교사 화면의 실시간 참여 현황(참가자 수·순위)이 안 나와. 점수판 통신을 이렇게 고쳐 줘. ① 통신 코드는 아래 두 함수를 그대로 쓰고, fetch에 headers나 mode: \'no-cors\'를 절대 넣지 마. const API = \'[점수판 주소]\'; async function apiPost(data) { try { const r = await fetch(API, { method: \'POST\', body: JSON.stringify(data) }); return await r.json(); } catch (e) { return { ok: false, error: String(e) }; } } async function apiGet(room) { try { const r = await fetch(API + \'?room=\' + encodeURIComponent(room) + \'&t=\' + Date.now()); return await r.json(); } catch (e) { return { ok: false, error: String(e) }; } } ② 학생이 [입장]을 누르는 즉시 apiPost({ action: \'battle\', room, pid, nick, score: 0, correct: 0, done: 0, q: 0, choice: \'\' })로 한 번 저장하고, 답할 때마다 같은 형식(done은 지금까지 푼 문제 수, q는 방금 답한 문제 번호)으로 다시 저장해 줘. room은 교사 화면과 똑같은 숫자 4자리 글자로 보내 줘. ③ 교사 화면은 3초마다 apiGet(방코드)로 읽고, 결과의 players(점수 높은 순, pid 앞에 \'p\'가 붙어 옴)로 참가자 수와 순위를 다시 그려 줘. ④ 참가자 목록 위에 \'마지막 갱신 시각 · 참가 n명\' 상태 줄을 두고, 실패하면 그 자리에 오류 내용(error)을 그대로 보여 줘. ⑤ localStorage는 try/catch로 감싸 줘. 나머지 기능은 그대로 둬.'.replace('[점수판 주소]', (String(window.LINKFORGE_API || '').trim() || '[점수판 주소: 내 구글 Apps Script 웹 앱 URL]'))]
     ] }
 ];
 
@@ -1578,7 +1578,13 @@ ${flow}
   · 학생 기록 저장: fetch(주소, { method: 'POST', body: JSON.stringify({ action: 'battle', room, pid, nick, score, correct, done, q, choice }) }) — headers(Content-Type)는 넣지 않는다(넣으면 CORS 오류). pid는 기기마다 무작위 영문·숫자 10자(localStorage에 보관), done은 지금까지 푼 문제 수, q는 방금 답한 문제 번호(1부터), choice는 고른 보기 글자.
   · 참가자·순위 읽기: fetch(주소 + '?room=' + 방코드 + '&t=' + Date.now()) → { ok, players: [{ pid, nick, score, correct, done, q, choice }], state: { q, phase } } — players는 점수 높은 순이고 pid 앞에 'p'가 붙어서 온다.${pace === 'host' ? `
   · 교사 진행 상태 저장: fetch(주소, { method: 'POST', body: JSON.stringify({ action: 'host', room, key, q, phase }) }) — key는 방을 만든 교사 기기의 무작위 영문·숫자 16자(localStorage에 보관), q는 지금 문제 번호(1부터), phase는 'wait'(대기)·'question'(문제 공개)·'reveal'(정답 공개)·'end'(종료).` : ''}
-- 네트워크 요청은 모두 try/catch로 감싸고, 실패해도 화면이 멈추지 않게 "다시 연결 중…" 안내를 보여 주며 다음 주기에 다시 시도한다.`;
+- 학생이 [입장]을 누르는 즉시 score 0, correct 0, done 0, q 0, choice ''로 한 번 저장해서, 문제를 풀기 전에도 교사 화면 참가자 목록에 바로 나타나게 한다. 그 뒤 한 문제 답할 때마다 다시 저장한다.
+- 교사 화면은 방을 만든 뒤 3초마다 참가자·순위를 읽어 화면을 새로 그린다. 참가자 목록 위에 "마지막 갱신 오후 3:41:05 · 참가 12명"처럼 상태 줄을 두고, 읽기에 실패하면 그 자리에 오류 내용을 보여 준다.
+- 통신은 아래 코드를 그대로 넣어 사용한다. headers와 mode: 'no-cors'를 절대 넣지 않는다(넣으면 저장이 안 되거나 순위를 읽지 못함). localStorage는 try/catch로 감싼다.
+  const API = '${api}';
+  async function apiPost(data) { try { const r = await fetch(API, { method: 'POST', body: JSON.stringify(data) }); return await r.json(); } catch (e) { return { ok: false, error: String(e) }; } }
+  async function apiGet(room) { try { const r = await fetch(API + '?room=' + encodeURIComponent(room) + '&t=' + Date.now()); return await r.json(); } catch (e) { return { ok: false, error: String(e) }; } }
+- 네트워크 요청이 실패해도 화면이 멈추지 않게 "다시 연결 중…" 안내를 보여 주며 다음 주기에 다시 시도한다.`;
 }
 function playBlock() {
     const play = getPlay(), pace = getPace();
