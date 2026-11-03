@@ -131,6 +131,7 @@ def build_lecture_html():
     d.rep("오늘은 시간이 짧으니 Gemini Canvas의 공유 링크까지만 가겠습니다.", "2부는 Gemini Canvas의 공유 링크까지 가겠습니다.")
     d.rep('<div class="foot"><span>강사: 조선대학교부속고등학교 교사 김다은</span>', f'<div class="foot"><span>강사: {WHO}</span>')
     d.s = d.s.replace("조대부중", "조대부고")
+    d.rep("4번 탭에 6개 분류 42개 + 나만의 고치기 공식", "4번 탭에 6개 분류 46개 + 나만의 고치기 공식")
 
     # 1부 원고를 표지 뒤에 넣기
     part1 = (HERE / "part1_lecture.html").read_text(encoding="utf-8").replace("{{QR_GEM}}", qr_svg(GEM, "22mm"))
